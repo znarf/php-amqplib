@@ -574,12 +574,13 @@ class AMQPChannel extends AbstractChannel
                                       $exchange, $routing_key, $mandatory,
                                       $immediate, $ticket);
 
-        $this->send_method_frame(array(60, 40), $args);
-
-        $this->connection->send_content($this->channel_id, 60, 0,
+        $data = $this->prepare_send_method_frame(array(60, 40), $args);
+        $data .= $this->connection->prepare_send_content(
+                                        $this->channel_id, 60, 0,
                                         strlen($msg->body),
                                         $msg->serialize_properties(),
                                         $msg->body);
+        $this->connection->write($data);
     }
 
 

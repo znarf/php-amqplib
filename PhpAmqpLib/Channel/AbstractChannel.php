@@ -129,6 +129,11 @@ class AbstractChannel
         $this->connection->send_channel_method_frame($this->channel_id, $method_sig, $args);
     }
 
+    protected function prepare_send_method_frame($method_sig, $args="")
+    {
+        return $this->connection->prepare_channel_method_frame($this->channel_id, $method_sig, $args);
+    }
+
     public function wait_content()
     {
         $frm = $this->next_frame();
