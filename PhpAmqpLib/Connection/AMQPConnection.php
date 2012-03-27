@@ -178,12 +178,13 @@ class AMQPConnection extends AbstractChannel
         $pkt->write($packed_properties);
 
         $pkt->write_octet(0xCE);
-        $pkt = $pkt->getvalue();
-        $this->write($pkt);
+        $envelope = $pkt->getvalue();
+
+        $content = '';
 
         while($body) {
-            $payload = substr($body,0, $this->frame_max-8);
-            $body = substr($body,$this->frame_max-8);
+            $payload = substr($body, 0, $this->frame_max-8);
+            $body = substr($body, $this->frame_max-8);
             $pkt = new AMQPWriter();
 
             $pkt->write_octet(3);
@@ -193,9 +194,10 @@ class AMQPConnection extends AbstractChannel
             $pkt->write($payload);
 
             $pkt->write_octet(0xCE);
-            $pkt = $pkt->getvalue();
-            $this->write($pkt);
+            $content .= $pkt->getvalue();
         }
+
+        $this->write($envelope . $content);
     }
 
     protected function send_channel_method_frame($channel, $method_sig, $args="")
