@@ -493,7 +493,7 @@ class AMQPConnection extends AbstractChannel
         $args->write_long($frame_max);
         $args->write_short($heartbeat);
         $this->send_method_frame(array(10, 31), $args);
-        $this->wait_tune_ok = False;
+        $this->wait_tune_ok = false;
     }
 
     /**
