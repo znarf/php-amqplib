@@ -48,11 +48,9 @@ class AMQPWriter
 
     private function flushbits()
     {
-        if (!empty($this->bits)) {
-            $this->out .= implode("", array_map('chr', $this->bits));
-            $this->bits = array();
-            $this->bitcount = 0;
-        }
+        $this->out .= implode("", array_map('chr', $this->bits));
+        $this->bits = array();
+        $this->bitcount = 0;
     }
 
     /**
@@ -60,7 +58,7 @@ class AMQPWriter
      */
     public function getvalue()
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         return $this->out;
     }
 
@@ -69,7 +67,7 @@ class AMQPWriter
      */
     public function write($s)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->out .= $s;
         return $this;
     }
@@ -109,7 +107,7 @@ class AMQPWriter
             throw new \InvalidArgumentException('Octet out of range 0..255');
         }
 
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->out .= chr($n);
         return $this;
     }
@@ -123,7 +121,7 @@ class AMQPWriter
             throw new \InvalidArgumentException('Octet out of range 0..65535');
         }
 
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->out .= pack('n', $n);
         return $this;
     }
@@ -133,14 +131,14 @@ class AMQPWriter
      */
     public function write_long($n)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->out .= implode("", AMQPWriter::chrbytesplit($n,4));
         return $this;
     }
 
     private function write_signed_long($n)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         // although format spec for 'N' mentions unsigned
         // it will deal with sinned integers as well. tested.
         $this->out .= pack('N', $n);
@@ -152,7 +150,7 @@ class AMQPWriter
      */
     public function write_longlong($n)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->out .= implode("", AMQPWriter::chrbytesplit($n,8));
         return $this;
     }
@@ -163,7 +161,7 @@ class AMQPWriter
      */
     public function write_shortstr($s)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         if (strlen($s) > 255) {
             throw new \InvalidArgumentException('String too long');
         }
@@ -179,7 +177,7 @@ class AMQPWriter
      */
     public function write_longstr($s)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $this->write_long(strlen($s));
         $this->out .= $s;
         return $this;
@@ -201,7 +199,7 @@ class AMQPWriter
     */
     public function write_table($d)
     {
-        $this->flushbits();
+        if ($this->bitcount) $this->flushbits();
         $table_data = new AMQPWriter();
         foreach ($d as $k=>$va) {
             list($ftype,$v) = $va;
