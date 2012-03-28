@@ -569,6 +569,33 @@ class AMQPChannel extends AbstractChannel
                                   $mandatory=false, $immediate=false,
                                   $ticket=null)
     {
+        $data = $this->prepare_basic_publish($msg, $exchange, $routing_key,
+                             $mandatory, $immediate, $ticket);
+        $this->connection->write($data);
+    }
+
+    protected $to_publish = array();
+
+    public function batch_basic_publish($msg, $exchange="", $routing_key="",
+                                  $mandatory=false, $immediate=false,
+                                  $ticket=null)
+    {
+        $this->to_publish[] = $this->prepare_basic_publish($msg, $exchange, $routing_key,
+                             $mandatory, $immediate, $ticket);
+    }
+
+    public function publish_batch()
+    {
+        if (!empty($this->to_publish)) {
+            $this->connection->write(implode('', $this->to_publish));
+        }
+        $this->to_publish = array();
+    }
+
+    protected function prepare_basic_publish($msg, $exchange="", $routing_key="",
+                                  $mandatory=false, $immediate=false,
+                                  $ticket=null)
+    {
         $ticket = $this->getTicket($ticket);
         $args = $this->frameBuilder->basicPublish(
                                       $exchange, $routing_key, $mandatory,
@@ -580,7 +607,7 @@ class AMQPChannel extends AbstractChannel
                                         strlen($msg->body),
                                         $msg->serialize_properties(),
                                         $msg->body);
-        $this->connection->write($data);
+        return $data;
     }
 
 
