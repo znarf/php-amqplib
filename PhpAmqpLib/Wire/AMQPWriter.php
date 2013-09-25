@@ -9,8 +9,6 @@ class AMQPWriter
     public function __construct()
     {
         $this->out = "";
-        $this->bits = array();
-        $this->bitcount = 0;
     }
 
     private static function chrbytesplit($x, $bytes)
