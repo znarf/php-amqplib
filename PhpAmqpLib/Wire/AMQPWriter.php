@@ -13,41 +13,6 @@ class AMQPWriter
         $this->bitcount = 0;
     }
 
-    private static function chrbytesplit($x, $bytes)
-    {
-        return array_map('chr', AMQPWriter::bytesplit($x,$bytes));
-    }
-
-    /**
-     * Splits number (could be either int or string) into array of byte
-     * values (represented as integers) in big-endian byte order.
-     */
-    private static function bytesplit($x, $bytes)
-    {
-        if (is_int($x)) {
-            if ($x<0) {
-                $x = sprintf("%u", $x);
-            }
-        }
-
-        $res = array();
-
-        while ($bytes > 0) {
-            $b = bcmod($x,'256');
-            $res[] = (int) $b;
-            $x = bcdiv($x,'256', 0);
-            $bytes--;
-        }
-
-        $res = array_reverse($res);
-
-        if ($x!=0) {
-            throw new AMQPOutOfBoundsException("Value too big!");
-        }
-
-        return $res;
-    }
-
     private function flushbits()
     {
         if (!empty($this->bits)) {
@@ -162,7 +127,10 @@ class AMQPWriter
     public function write_longlong($n)
     {
         $this->flushbits();
-        $this->out .= implode("", AMQPWriter::chrbytesplit($n,8));
+        $n1 = ($n & 0xffffffff00000000) >> 32;
+        $n2 = ($n & 0x00000000ffffffff);
+
+        $this->out .= pack('NN', $n1, $n2);
 
         return $this;
     }
