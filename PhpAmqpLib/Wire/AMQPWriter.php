@@ -71,7 +71,7 @@ class AMQPWriter
     }
 
     /**
-     * Write an integer as an unsigned 8-bit value.
+     * Write an integer as an unsigned 8-bit value. (max 255)
      */
     public function write_octet($n)
     {
@@ -86,12 +86,12 @@ class AMQPWriter
     }
 
     /**
-     * Write an integer as an unsigned 16-bit value.
+     * Write an integer as an unsigned 16-bit value. (max 65535)
      */
     public function write_short($n)
     {
-        if ($n < 0 ||  $n > 65535) {
-            throw new \InvalidArgumentException('Octet out of range 0..65535');
+        if ($n < 0 || $n > 65535) {
+            throw new \InvalidArgumentException('Value out of range 0..65535');
         }
 
         $this->flushbits();
@@ -101,21 +101,16 @@ class AMQPWriter
     }
 
     /**
-     * Write an integer as an unsigned 32-bit value.
+     * Write an integer as an unsigned 32-bit value. (max 4294967295)
      */
     public function write_long($n)
     {
         $this->flushbits();
-        $this->out .= pack('N', $n);
 
-        return $this;
-    }
+        if ($n < 0 || $n > 4294967295) {
+            throw new \InvalidArgumentException('Value out of range 0..4294967295');
+        }
 
-    private function write_signed_long($n)
-    {
-        $this->flushbits();
-        // although format spec for 'N' mentions unsigned
-        // it will deal with sinned integers as well. tested.
         $this->out .= pack('N', $n);
 
         return $this;
@@ -184,11 +179,11 @@ class AMQPWriter
                 $data->write_longstr($v);
             } elseif (is_int($v)) {
                 $data->write('I');
-                $data->write_signed_long($v);
+                $data->write_long($v);
             } elseif ($v instanceof AMQPDecimal) {
                 $data->write('D');
                 $data->write_octet($v->e);
-                $data->write_signed_long($v->n);
+                $data->write_long($v->n);
             } elseif (is_array($v)) {
                 $data->write('A');
                 $data->write_array($v);
@@ -228,12 +223,12 @@ class AMQPWriter
                 $table_data->write_longstr($v);
             } elseif ($ftype=='I') {
                 $table_data->write('I');
-                $table_data->write_signed_long($v);
+                $table_data->write_long($v);
             } elseif ($ftype=='D') {
                 // 'D' type values are passed AMQPDecimal instances.
                 $table_data->write('D');
                 $table_data->write_octet($v->e);
-                $table_data->write_signed_long($v->n);
+                $table_data->write_long($v->n);
             } elseif ($ftype=='T') {
                 $table_data->write('T');
                 $table_data->write_timestamp($v);
