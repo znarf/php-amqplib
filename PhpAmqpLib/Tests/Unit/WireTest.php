@@ -7,16 +7,6 @@ use PhpAmqpLib\Wire\AMQPWriter;
 
 class WireTest extends \PHPUnit_Framework_TestCase
 {
-    public function testBitWriteRead()
-    {
-        $this->bitWriteRead(true);
-        $this->bitWriteRead(false);
-    }
-
-    protected function bitWriteRead($v)
-    {
-        $this->writeAndRead($v, 'write_bit', 'read_bit');
-    }
 
     public function testOctetWriteRead()
     {
