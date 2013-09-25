@@ -9,17 +9,6 @@ class AMQPWriter
     public function __construct()
     {
         $this->out = "";
-        $this->bits = array();
-        $this->bitcount = 0;
-    }
-
-    private function flushbits()
-    {
-        if (!empty($this->bits)) {
-            $this->out .= implode("", array_map('chr', $this->bits));
-            $this->bits = array();
-            $this->bitcount = 0;
-        }
     }
 
     /**
@@ -27,8 +16,6 @@ class AMQPWriter
      */
     public function getvalue()
     {
-        $this->flushbits();
-
         return $this->out;
     }
 
@@ -37,35 +24,24 @@ class AMQPWriter
      */
     public function write($s)
     {
-        $this->flushbits();
         $this->out .= $s;
 
         return $this;
     }
 
     /**
-     * Write a boolean value.
+     * Write multiple bits as an octet
      */
-    public function write_bit($b)
+    public function write_bits($bits)
     {
-        if ($b) {
-            $b = 1;
-        } else {
-            $b = 0;
+        $value = 0;
+
+        foreach ($bits as $n => $bit) {
+            $bit = $bit ? 1 : 0;
+            $value |= ($bit << $n);
         }
 
-        $shift = $this->bitcount % 8;
-
-        if ($shift == 0) {
-            $last = 0;
-        } else {
-            $last = array_pop($this->bits);
-        }
-
-        $last |= ($b << $shift);
-        array_push($this->bits, $last);
-
-        $this->bitcount += 1;
+        $this->out .= chr($value);
 
         return $this;
     }
@@ -79,7 +55,6 @@ class AMQPWriter
             throw new \InvalidArgumentException('Octet out of range 0..255');
         }
 
-        $this->flushbits();
         $this->out .= chr($n);
 
         return $this;
@@ -94,7 +69,6 @@ class AMQPWriter
             throw new \InvalidArgumentException('Value out of range 0..65535');
         }
 
-        $this->flushbits();
         $this->out .= pack('n', $n);
 
         return $this;
@@ -105,8 +79,6 @@ class AMQPWriter
      */
     public function write_long($n)
     {
-        $this->flushbits();
-
         if ($n < 0 || $n > 4294967295) {
             throw new \InvalidArgumentException('Value out of range 0..4294967295');
         }
@@ -121,7 +93,6 @@ class AMQPWriter
      */
     public function write_longlong($n)
     {
-        $this->flushbits();
         $n1 = ($n & 0xffffffff00000000) >> 32;
         $n2 = ($n & 0x00000000ffffffff);
 
@@ -136,7 +107,6 @@ class AMQPWriter
      */
     public function write_shortstr($s)
     {
-        $this->flushbits();
         if (strlen($s) > 255) {
             throw new \InvalidArgumentException('String too long');
         }
@@ -153,7 +123,6 @@ class AMQPWriter
      */
     public function write_longstr($s)
     {
-        $this->flushbits();
         $this->write_long(strlen($s));
         $this->out .= $s;
 
@@ -170,7 +139,6 @@ class AMQPWriter
      */
     public function write_array($a)
     {
-        $this->flushbits();
         $data = new AMQPWriter();
 
         foreach ($a as $v) {
@@ -213,7 +181,6 @@ class AMQPWriter
     */
     public function write_table($d)
     {
-        $this->flushbits();
         $table_data = new AMQPWriter();
         foreach ($d as $k=>$va) {
             list($ftype,$v) = $va;
